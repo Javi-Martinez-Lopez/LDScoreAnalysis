@@ -245,5 +245,5 @@ This refers to the analysis performed in the Fig 1 of <https://www.nature.com/ar
 This analysis is detailed here: <https://github.com/bulik/ldsc/wiki/Heritability-and-Genetic-Correlation#estimating-heritability-genetic-correlation-and-the-ld-score-regression-intercept>
 
 ```{bash, eval = F}
-python ldsc.py --h2 disease1.summstat, disease2.summstat --ref-ld-chr eur_w_ld_chr --w-ld-chr weights_hm3_no_hla/weights. --out disease1.disease2 
+python ldsc.py --rg disease1.summstat,disease2.summstat --ref-ld-chr eur_w_ld_chr --w-ld-chr weights_hm3_no_hla/weights. --out disease1.disease2 
 ```
