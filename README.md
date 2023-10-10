@@ -229,7 +229,7 @@ wait
 read -p "Give me an output name for your results: " output
 
 #Construct the command
-ldsc_command="ldsc.py --h2 $summstat --ref-ld-chr $annotation_values --out $output --overlap-annot  --frqfile-chr 1000G_frq/1000G.mac5eur. --w-ld-chr weights_hm3_no_hla/weights. --print-coefficients"
+ldsc_command="python ldsc.py --h2 $summstat --ref-ld-chr $annotation_values --out $output --overlap-annot  --frqfile-chr 1000G_frq/1000G.mac5eur. --w-ld-chr weights_hm3_no_hla/weights. --print-coefficients"
 
 #Execute the analysis
 eval "$ldsc_command"
@@ -245,5 +245,5 @@ This refers to the analysis performed in the Fig 1 of <https://www.nature.com/ar
 This analysis is detailed here: <https://github.com/bulik/ldsc/wiki/Heritability-and-Genetic-Correlation#estimating-heritability-genetic-correlation-and-the-ld-score-regression-intercept>
 
 ```{bash, eval = F}
-ldsc.py --h2 disease1.summstat disease2.summstat --ref-ld-chr eur_w_ld_chr --w-ld-chr weights_hm3_no_hla/weights. --out disease1.disease2 
+python ldsc.py --h2 disease1.summstat disease2.summstat --ref-ld-chr eur_w_ld_chr --w-ld-chr weights_hm3_no_hla/weights. --out disease1.disease2 
 ```
