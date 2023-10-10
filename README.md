@@ -22,7 +22,7 @@ source activate ldsc
 **\*Note:** if you exit that environment, to start it again you will need to do the following and log into ldsc environment:
 
 ```{bash, eval = F}
-conda env update --file enviroment.yml --prune
+conda env update --file environment.yml --prune
 ```
 
 # Step 1: Prepare the summary statistics of the desired disease/trait
