@@ -38,7 +38,7 @@ For more information of this analysis, please refer to: <https://github.com/buli
 The information munge_sumstats.py needs:
 
 | Variant ID (rs)        | Allele 1 (a1)     | Allele 2 (a2)         | Sample size (N)                                                                                   | P-value (p) | OR (or)                                                                                          |
-|----------|----------|----------|-----------------|----------|-----------------|
+|------------|------------|------------|------------|------------|------------|
 | Usually, the RS number | The effect allele | The non-effect allele | It may vary from SNP to SNP (If you pass it through the previous line you don't need this column) | The pvalue  | The effect of each variant. Can be either OR or Beta. It will be used to calculate the Z scores. |
 
 As you may notice, it is possible to prepare it by yourself, however, if you run the previous line you will make sure it does not give you any unspecified problem in following analysis.
@@ -218,7 +218,7 @@ annotation_values="" #This will contain all the annotations to evaluate
 #Loop through all the names of the input file containing the name of the Annotations
 whle IFS= read -r name; do
   #Adds the name to the previous variable
-  annotation_values="$annotation_values DHS_AnnotationFiles/$name." #The point is to include all the chromosomes
+  annotation_values="$annotation_values DHS_AnnotationFiles/$name.," #The point is to include all the chromosomes
 done<"$input_file"
 
 annotation_values=${annotation_values# } #Removes the initial space
@@ -245,5 +245,5 @@ This refers to the analysis performed in the Fig 1 of <https://www.nature.com/ar
 This analysis is detailed here: <https://github.com/bulik/ldsc/wiki/Heritability-and-Genetic-Correlation#estimating-heritability-genetic-correlation-and-the-ld-score-regression-intercept>
 
 ```{bash, eval = F}
-python ldsc.py --h2 disease1.summstat disease2.summstat --ref-ld-chr eur_w_ld_chr --w-ld-chr weights_hm3_no_hla/weights. --out disease1.disease2 
+python ldsc.py --h2 disease1.summstat, disease2.summstat --ref-ld-chr eur_w_ld_chr --w-ld-chr weights_hm3_no_hla/weights. --out disease1.disease2 
 ```
