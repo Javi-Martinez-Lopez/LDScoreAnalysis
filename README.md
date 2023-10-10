@@ -247,3 +247,4 @@ This analysis is detailed here: <https://github.com/bulik/ldsc/wiki/Heritability
 ```{bash, eval = F}
 python ldsc.py --rg disease1.summstat,disease2.summstat --ref-ld-chr eur_w_ld_chr --w-ld-chr weights_hm3_no_hla/weights. --out disease1.disease2 
 ```
+**\*NOTE:** Be very careful with the ref-ld-chr, as it is quite frequent that an error: list out of range appear, and it has to be with this parameter.
