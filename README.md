@@ -43,6 +43,9 @@ The information munge_sumstats.py needs:
 
 As you may notice, it is possible to prepare it by yourself, however, if you run the previous line you will make sure it does not give you any unspecified problem in following analysis.
 
+**Little trick** 
+If you're struggling with your summary statistics data because it takes too long, try this flag: --chunksize 500000
+
 # Step 2: Prepare the annotations
 
 If you want to assess if there is an enrichment of the associated variants within specific cell functional annotations, you need to calculate the LD scores of this data. In this sense, you will need a .bed file of each annotation. Here is an example how I processed the annotations DNase I hypersensitive sites from this paper: <https://www.nature.com/articles/s41586-020-2559-3>. If you want to use this files, they are available here: <https://zenodo.org/record/3838751#.X69tfEJKg6U>.
