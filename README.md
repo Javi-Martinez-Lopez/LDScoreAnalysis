@@ -219,7 +219,7 @@ fi
 annotation_values="" #This will contain all the annotations to evaluate
 
 #Loop through all the names of the input file containing the name of the Annotations
-whle IFS= read -r name; do
+while IFS= read -r name; do
   #Adds the name to the previous variable
   annotation_values="$annotation_values DHS_AnnotationFiles/$name.," < "$input_file" #The point is to include all the chromosomes
 done
