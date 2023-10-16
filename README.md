@@ -205,7 +205,6 @@ read -p "Please enter the name and the path to the summary statistic file: " sum
 
 read -p "Please enter the name and the path to the annotations names file: " input_file #This file contains all the datasets you want to prepare for your enrichment analysis
 
-
 if [ ! -f "$input_file" ]; then #Check if the input file exists, if not, it exists the script.
   echo "Input file '$input_file' not found"
   exit 1
@@ -221,7 +220,8 @@ annotation_values="" #This will contain all the annotations to evaluate
 #Loop through all the names of the input file containing the name of the Annotations
 while IFS= read -r name; do
   #Adds the name to the previous variable
-  annotation_values="$annotation_values DHS_AnnotationFiles/$name.," < "$input_file" #The point is to include all the chromosomes
+  echo "$name"
+  annotation_values="$annotation_values DHS_AnnotationFiles/$name.," < "$annotation_values" #The point is to include all the chromosomes
 done
 
 annotation_values=${annotation_values# } #Removes the initial space
