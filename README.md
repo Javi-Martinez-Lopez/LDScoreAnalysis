@@ -1,4 +1,3 @@
-# LD Score regression analysis
 # Tool background
 
 This tool was designed to study the heritability and the genetic correlation from GWAS summary statistics to other traits and genetic functional annotations. All the credit of this bioinformatic tool is in the following github link: <https://github.com/bulik/ldsc>. The important point of this tool is that it takes into account the linkage disequilibrium (LD) blocks of the genome, which are inherited together. In this sense, is not useful to find an enrichment of variants located in a massive LD block when not taken into account the size of this genomic region, as it will lead to misinterpretation of the data. Instead, including this as a covariate helps us to distinguish properly the effects of this GWAS genetic associations.
@@ -38,13 +37,14 @@ For more information of this analysis, please refer to: <https://github.com/buli
 The information munge_sumstats.py needs:
 
 | Variant ID (rs)        | Allele 1 (a1)     | Allele 2 (a2)         | Sample size (N)                                                                                   | P-value (p) | OR (or)                                                                                          |
-|------------|------------|------------|------------|------------|------------|
+|----------|----------|----------|-----------------|----------|-----------------|
 | Usually, the RS number | The effect allele | The non-effect allele | It may vary from SNP to SNP (If you pass it through the previous line you don't need this column) | The pvalue  | The effect of each variant. Can be either OR or Beta. It will be used to calculate the Z scores. |
 
 As you may notice, it is possible to prepare it by yourself, however, if you run the previous line you will make sure it does not give you any unspecified problem in following analysis.
 
-**Little trick** 
-If you're struggling with your summary statistics data because it takes too long, try this flag: --chunksize 500000
+**Little trick**
+
+If you're struggling with your summary statistics data because it takes too long, try this flag: \--chunksize 500000
 
 # Step 2: Prepare the annotations
 
@@ -181,11 +181,101 @@ done < "$input_file"
 
 The script assumes that the SNPs are in the same order. In this case, as we are going to use the same SNPs datasets, we assume that they are. However, this should be taken into account when splitting this step into two different phases: the **make_annot.py** and the **ldsc.py**
 
-# Step 4: Cell type enrichment analysis
+# Step 4: Merge all the annotations into the same file
+
+In this step, you will merge all the the LD scores generated before from different annotations into the "same file" . There will be created the four different types of files: .l2.ldscore, .annot, .l2.M and .l2.M_5_50. These files are further explained here (). These files will be recursively completed with all the annotations into a new folder, and there will be one of these files for each chromosome, so they will be 66 final files within that folder, no matter how many annotations you include.
+
+## MergeAnnotations.sh
+
+```{bash, eval=F}
+#!/bin/bash
+
+read -p "Please enter the name of the output files: " name #This is the name you want for your output
+read -p "Please enter the name of the output folder: " dest #This is the destination folder
+
+#Read annotation names from the file into an array
+mapfile -t annotations < "DHS/filenames.txt" #Please change!
+
+
+foolder="DHS_AnnotationFiles/" #Folder where the annotation files are (Diferent from the output folder!)
+
+#check the input and output folder are not the same
+if [ "$dest" == "$foolder" ]; then
+  echo "Input ($foolder) and output folder ($dest) must be different"
+  exit 1
+fi
+
+#Create a folder to contain the merged files and the 66 files that we are going to need for the regression
+mkdir "$dest"
+
+#Decompress all .gz files for all the annotations
+for annotation in "${annotations[@]}"; do
+  echo "Decompressing files for ${annotation}"
+  for i in {1..22}; do
+    gunzip -d "$foolder${annotation}.${i}.l2.ldscore.gz"
+    gunzip -d "$foolder${annotation}.${i}.annot.gz"
+  done
+done
+
+for i in {1..22}; do
+  #Create the common files
+  touch "$dest/$name.${i}.l2.M_5_50"
+  touch "$dest/$name.${i}.l2.M"
+  touch "$dest/$name.${i}.annot"
+  touch "$dest/$name.${i}.l2.ldscore"
+  cut -f1-3 "$foolder${annotations[0]}.${i}.l2.ldscore" >> "$dest/$name.${i}.l2.ldscore" #Adds the columns to the common ldscore file  
+  echo -e "CHR\tSNP\tBP" > "$dest/$name.${i}.annot" #Adds the column names
+  cut -f1,2,4 "1000G_plinkfiles/1000G.mac5eur.${i}.bim" >> "$dest/$name.${i}.annot" #Adds the columns to the common annotation file
+  
+done
+CONT=0 #This is a counting variable so we can add a new column every time. It increases by 1 per annotation
+
+for annotation in "${annotations[@]}"; do
+  echo "Adding ${annotation} to merged file"
+  for i in {1..22}; do
+    if [ ! -f "$foolder${annotation}.${i}.l2.ldscore" ] || [ ! -f "$foolder${annotation}.${i}.l2.M" ] || [ ! -f "$foolder${annotation}.${i}.l2.M_5_50" ] || [ ! -f "$foolder${annotation}.${i}.annot" ]; then
+      echo "One or more input files from ${annotation} do not exist"
+      continue
+    fi
+    #Change the colname and add the L2 column to the merged file
+    awk -v colname="${annotation}" -v contador="$CONT" 'BEGIN{OFS="\t"} FNR==NR{a[NR]=$4; next}{$(4+contador)=a[FNR]}FNR==1{$(4+contador)=colname}1' "$foolder${annotation}.${i}.l2.ldscore" "$dest/$name.${i}.l2.ldscore" > "$dest/temp_output.ldscore"
+    
+    #Change the colname and add the annot column to the merged file
+    awk -v colname="${annotation}" -v contador="$CONT" 'BEGIN{OFS="\t"} FNR==NR{a[NR]=$1; next}{$(4+contador)=a[FNR]}FNR==1{$(4+contador)=colname}1' "$foolder${annotation}.${i}.annot" "$dest/$name.${i}.annot" > "$dest/temp_output.annot"
+   
+    #Add the M_5_50 value to the merged M_5_50 file
+    paste -d '\t' "$foolder${annotation}.${i}.l2.M_5_50" "$dest/$name.${i}.l2.M_5_50" > "$dest/temp_output.l2.M_5_50"
+   
+    #Add the M value to the merged M file
+    paste -d '\t' "$foolder${annotation}.${i}.l2.M" "$dest/$name.${i}.l2.M" > "$dest/temp_output.l2.M"
+    
+    #Update the common files with the temporal outputs
+    mv "$dest/temp_output.ldscore" "$dest/$name.${i}.l2.ldscore"
+    mv "$dest/temp_output.annot" "$dest/$name.${i}.annot" 
+    mv "$dest/temp_output.l2.M_5_50" "$dest/$name.${i}.l2.M_5_50" 
+    mv "$dest/temp_output.l2.M" "$dest/$name.${i}.l2.M"
+    
+  done
+  
+  #This if is to only add one if the annotation is added to the merged file
+  if [ -f "$foolder${annotation}.${i}.l2.ldscore" ] || [ -f "$foolder${annotation}.${i}.l2.M" ] || [ -f "$foolder${annotation}.${i}.l2.M_5_50" ] || [ -f "$foolder${annotation}.${i}.annot" ]; then
+      CONT=$((CONT + 1)) 
+  fi
+  
+
+done
+
+
+echo "The merging files are finished and located in $dest. You can now use them to continue your analysis."
+```
+
+**NOTE:** Please review that the folders and input files and folders are well indicated in the variables already set in the script.
+
+# Step 5: Analyze the correlation between cell types and the desired summary statistics.
 
 In this step, you will use the LD scores generated before to see the correlation bewteen your disease and the annotations you are interested in.
 
-## Previous things you need to know about the script:
+## Previous things you need to know about the command:
 
 **\--ref-ld-chr** - This is the reference ld score you want your summary statistics to be compared.
 
@@ -195,47 +285,9 @@ In this step, you will use the LD scores generated before to see the correlation
 
 **\--w-ld-chr** - This is the file that contains the weight of each SNP in the regression.
 
-## LDScore_CellTypeAnnotations.sh
-
 ```{bash, eval = F}
-#!/bin/bash
 
-#Asks for the summstats file
-read -p "Please enter the name and the path to the summary statistic file: " summstat
-
-read -p "Please enter the name and the path to the annotations names file: " input_file #This file contains all the datasets you want to prepare for your enrichment analysis
-
-if [ ! -f "$input_file" ]; then #Check if the input file exists, if not, it exists the script.
-  echo "Input file '$input_file' not found"
-  exit 1
-fi
-
-if [ ! -f "$summstat" ]; then #Check if the input file exists, if not, it exists the script.
-  echo "Summary statistics '$summstat' not found"
-  exit 1
-fi
-
-annotation_values= "" #This will contain all the annotations to evaluate
-
-#Loop through all the names of the input file containing the name of the Annotations
-while IFS= read -r name; do
-  #Adds the name to the previous variable
-  echo "$name"
-  annotation_values="$annotation_values.DHS_AnnotationFiles/$name.," #The point is to include all the chromosomes
-done < "$input_file"
-
-annotation_values=${annotation_values# } #Removes the initial space
-
-echo "You are going to evaluate the following annotations: $annotation_values"
-wait
-
-read -p "Give me an output name for your results: " output
-
-#Construct the command
-ldsc_command="python ldsc.py --h2 $summstat --ref-ld-chr $annotation_values --out $output --overlap-annot  --frqfile-chr 1000G_frq/1000G.mac5eur. --w-ld-chr weights_hm3_no_hla/weights. --print-coefficients"
-
-#Execute the analysis
-eval "$ldsc_command"
+python ldsc.py --h2 DiseaseA.sumstats.gz --ref-ld-chr path/OutputAnnotation. --out DiseaseA.Annotations --overlap-annot  --frqfile-chr 1000G_frq/1000G.mac5eur. --w-ld-chr weights_hm3_no_hla/weights. --print-coefficients
 
 ```
 
@@ -250,4 +302,5 @@ This analysis is detailed here: <https://github.com/bulik/ldsc/wiki/Heritability
 ```{bash, eval = F}
 python ldsc.py --rg disease1.summstat,disease2.summstat --ref-ld-chr eur_w_ld_chr --w-ld-chr weights_hm3_no_hla/weights. --out disease1.disease2 
 ```
+
 **\*NOTE:** Be very careful with the ref-ld-chr, as it is quite frequent that an error: list out of range appear, and it has to be with this parameter.
