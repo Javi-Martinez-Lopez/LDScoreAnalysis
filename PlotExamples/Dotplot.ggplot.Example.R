@@ -10,8 +10,7 @@ P1 <- subset(SScResultsDHS, FDR<0.05) %>% mutate(Description = fct_reorder(Descr
   coord_flip()+
   geom_hline(yintercept = -log10(0.05), linewidth=0.8, linetype="dashed", color="#676767")+
   facet_grid(factor(Organ, levels = c("Blood","Skin", "Lung", "Muscle", "Kidney", "Heart", "Gum", "Brain", "Mammary", "Mesoderm"))~., scales = "free_y", space = "free")+ #Scales free allows to set correctly the y axis. 
-  force_panelsizes(rows = c(24.5,2.5,3.5,3,3,3,2,2.5,4,4.3))+
-  #scale_color_manual(values = c('#c1121f','#f28482','#8ecae6','#6a040f','#f77f00','#a7c957','#cdb4db','#e9c46a','#3e5c76','#ffb703'))+
+  force_panelsizes(rows = c(24.5,2.5,3.5,3,3,3,2,2.5,4,4.3))+ #This is to make sure that the title of each facet is embebbed within the panel
   scale_fill_manual(values = c('#c1121f','#f28482','#8ecae6','#6a040f','#f77f00','#a7c957','#cdb4db','#e9c46a','#3e5c76','#ffb703'))+
   theme_classic()+
   guides(fill = guide_legend(override.aes = list(size = 10)), 
