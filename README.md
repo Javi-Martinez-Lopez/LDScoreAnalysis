@@ -194,10 +194,10 @@ read -p "Please enter the name of the output files: " name #This is the name you
 read -p "Please enter the name of the output folder: " dest #This is the destination folder
 
 #Read annotation names from the file into an array
-mapfile -t annotations < "DHS/filenames.txt" #Please change!
+mapfile -t annotations < "DHS/filenames.txt"
 
 
-foolder="DHS_AnnotationFiles/" #Folder where the annotation files are (Diferent from the output folder!)
+foolder="DHS_DEF_ANNOTATIONS/" #Folder where the annotation files are (Diferent from the output folder!)
 
 #check the input and output folder are not the same
 if [ "$dest" == "$foolder" ]; then
@@ -218,7 +218,6 @@ for annotation in "${annotations[@]}"; do
 done
 
 for i in {1..22}; do
-  #Create the common files
   touch "$dest/$name.${i}.l2.M_5_50"
   touch "$dest/$name.${i}.l2.M"
   touch "$dest/$name.${i}.annot"
@@ -231,35 +230,44 @@ done
 CONT=0 #This is a counting variable so we can add a new column every time. It increases by 1 per annotation
 
 for annotation in "${annotations[@]}"; do
-  echo "Adding ${annotation} to merged file"
+  EXIST=1 #To add only the existing annotation files and to do not include blank spaces in case some are missing
   for i in {1..22}; do
     if [ ! -f "$foolder${annotation}.${i}.l2.ldscore" ] || [ ! -f "$foolder${annotation}.${i}.l2.M" ] || [ ! -f "$foolder${annotation}.${i}.l2.M_5_50" ] || [ ! -f "$foolder${annotation}.${i}.annot" ]; then
-      echo "One or more input files from ${annotation} do not exist"
+      EXIST=0
       continue
     fi
-    #Change the colname and add the L2 column to the merged file
-    awk -v colname="${annotation}" -v contador="$CONT" 'BEGIN{OFS="\t"} FNR==NR{a[NR]=$4; next}{$(4+contador)=a[FNR]}FNR==1{$(4+contador)=colname}1' "$foolder${annotation}.${i}.l2.ldscore" "$dest/$name.${i}.l2.ldscore" > "$dest/temp_output.ldscore"
+  done  
     
-    #Change the colname and add the annot column to the merged file
-    awk -v colname="${annotation}" -v contador="$CONT" 'BEGIN{OFS="\t"} FNR==NR{a[NR]=$1; next}{$(4+contador)=a[FNR]}FNR==1{$(4+contador)=colname}1' "$foolder${annotation}.${i}.annot" "$dest/$name.${i}.annot" > "$dest/temp_output.annot"
-   
-    #Add the M_5_50 value to the merged M_5_50 file
-    paste -d '\t' "$foolder${annotation}.${i}.l2.M_5_50" "$dest/$name.${i}.l2.M_5_50" > "$dest/temp_output.l2.M_5_50"
-   
-    #Add the M value to the merged M file
-    paste -d '\t' "$foolder${annotation}.${i}.l2.M" "$dest/$name.${i}.l2.M" > "$dest/temp_output.l2.M"
+  if [ $EXIST == 0 ]; then
+      echo "WARNING: MISSING FILES (Not adding ${annotation} to merged file)"
+  fi
     
-    #Update the common files with the temporal outputs
-    mv "$dest/temp_output.ldscore" "$dest/$name.${i}.l2.ldscore"
-    mv "$dest/temp_output.annot" "$dest/$name.${i}.annot" 
-    mv "$dest/temp_output.l2.M_5_50" "$dest/$name.${i}.l2.M_5_50" 
-    mv "$dest/temp_output.l2.M" "$dest/$name.${i}.l2.M"
+  if [ $EXIST == 1 ]; then
+    echo "Adding ${annotation} to merged file"
+    for i in {1..22}; do
+      #Change the colname and add the L2 column to the merged file
+      awk -v colname="${annotation}" -v contador="$CONT" 'BEGIN{OFS="\t"} FNR==NR{a[NR]=$4; next}{$(4+contador)=a[FNR]}FNR==1{$(4+contador)=colname}1' "$foolder${annotation}.${i}.l2.ldscore" "$dest/$name.${i}.l2.ldscore" > "$dest/temp_output.ldscore"
+      
+      #Change the colname and add the annot column to the merged file
+      awk -v colname="${annotation}" -v contador="$CONT" 'BEGIN{OFS="\t"} FNR==NR{a[NR]=$1; next}{$(4+contador)=a[FNR]}FNR==1{$(4+contador)=colname}1' "$foolder${annotation}.${i}.annot" "$dest/$name.${i}.annot" > "$dest/temp_output.annot"
+     
+      #Add the M_5_50 value to the merged M_5_50 file
+      paste -d '\t' "$foolder${annotation}.${i}.l2.M_5_50" "$dest/$name.${i}.l2.M_5_50" > "$dest/temp_output.l2.M_5_50"
+     
+      #Add the M value to the merged M file
+      paste -d '\t' "$foolder${annotation}.${i}.l2.M" "$dest/$name.${i}.l2.M" > "$dest/temp_output.l2.M"
+      
+      #Update the common files with the temporal outputs
+      mv "$dest/temp_output.ldscore" "$dest/$name.${i}.l2.ldscore"
+      mv "$dest/temp_output.annot" "$dest/$name.${i}.annot" 
+      mv "$dest/temp_output.l2.M_5_50" "$dest/$name.${i}.l2.M_5_50" 
+      mv "$dest/temp_output.l2.M" "$dest/$name.${i}.l2.M"
+    done
     
-  done
-  
-  #This if is to only add one if the annotation is added to the merged file
-  if [ -f "$foolder${annotation}.${i}.l2.ldscore" ] || [ -f "$foolder${annotation}.${i}.l2.M" ] || [ -f "$foolder${annotation}.${i}.l2.M_5_50" ] || [ -f "$foolder${annotation}.${i}.annot" ]; then
-      CONT=$((CONT + 1)) 
+      #This if is to only add one if the annotation is added to the merged file
+      if [ -f "$foolder${annotation}.${i}.l2.ldscore" ] || [ -f "$foolder${annotation}.${i}.l2.M" ] || [ -f "$foolder${annotation}.${i}.l2.M_5_50" ] || [ -f "$foolder${annotation}.${i}.annot" ]; then
+          CONT=$((CONT + 1)) 
+      fi
   fi
   
 
@@ -267,6 +275,7 @@ done
 
 
 echo "The merging files are finished and located in $dest. You can now use them to continue your analysis."
+
 ```
 
 **NOTE:** Please review that the folders and input files and folders are well indicated in the variables already set in the script.
